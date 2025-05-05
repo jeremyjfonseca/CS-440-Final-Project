@@ -1,9 +1,9 @@
 """
 nn_scratch/nn.py
 
-A simple three-layer neural network built from scratch using NumPy,
-with **two hidden layers** (hidden_dim1 and hidden_dim2) and a sigmoid output.
-Implements batch gradient descent and a tanh activation in hidden layers.
+Simple three-layer neural network built from scratch using NumPy,
+with **two hidden layers** (hidden_dim1 and hidden_dim2) and a softmax output.
+Implements batch gradient descent and tanh activations in the hidden layers.
 """
 
 import numpy as np
@@ -34,10 +34,10 @@ class NeuralNetScratch(Classifier):
     
     def initialize_weights(self):
         """
-        Randomly initialize weight matrices and zero biases for:
-          - W1, b1: input -> hidden1
-          - W2, b2: hidden1 -> hidden2
-          - W3, b3: hidden2 -> output
+        Randomly initialize weight matrices and zero biases for all layers:
+          - W1, b1: input → hidden1
+          - W2, b2: hidden1 → hidden2
+          - W3, b3: hidden2 → output
         """
         self.W1 = np.random.randn(self.input_dim,  self.hidden_dim1) * 0.01
         self.b1 = np.zeros((1, self.hidden_dim1))
@@ -46,21 +46,23 @@ class NeuralNetScratch(Classifier):
         self.W3 = np.random.randn(self.hidden_dim2, self.output_dim) * 0.01
         self.b3 = np.zeros((1, self.output_dim))
 
-    def sigmoid(self, z):
+    def softmax(self, Z):
         """
-        Sigmoid activation function.
+        Softmax activation function for multi-class output.
 
         Args:
-            z (ndarray): pre-activation input
+            Z (ndarray): pre-activation array of shape (n_samples, output_dim)
 
         Returns:
-            ndarray: sigmoid(z)
+            ndarray: softmax probabilities of same shape
         """
-        return 1 / (1 + np.exp(-z))
+        # subtract max for numerical stability
+        exp = np.exp(Z - np.max(Z, axis=1, keepdims=True))
+        return exp / np.sum(exp, axis=1, keepdims=True)
 
     def fit(self, X, y):
         """
-        Train the network on data X and labels y using batch gradient descent.
+        Train the network on data X and labels y with batch gradient descent.
 
         Args:
             X (ndarray): shape (n_samples, input_dim)
@@ -71,43 +73,34 @@ class NeuralNetScratch(Classifier):
         # One-hot encode labels into shape (n_samples, output_dim)
         Y = np.eye(self.output_dim)[y]
 
-        # Initialize learnable parameters
+        # Initialize all weights and biases
         self.initialize_weights()
 
-        # Perform 'epochs' passes over the entire dataset
         for epoch in range(self.epochs):
             # ---- Forward Pass ----
-            # Layer 1 pre-activation: Z1 = X·W1 + b1
-            Z1 = X.dot(self.W1) + self.b1            # shape (n, hidden_dim1)
-            # Layer 1 activation: A1 = tanh(Z1)
-            A1 = np.tanh(Z1)                         # shape (n, hidden_dim1)
-            # Layer 2 pre-activation: Z2 = A1·W2 + b2
-            Z2 = A1.dot(self.W2) + self.b2           # shape (n, hidden_dim2)
-            # Layer 2 activation: A2 = tanh(Z2)
-            A2 = np.tanh(Z2)                         # shape (n, hidden_dim2)
-            # Output layer pre-activation: Z3 = A2·W3 + b3
-            Z3 = A2.dot(self.W3) + self.b3           # shape (n, output_dim)
-            # Output activation: A3 = sigmoid(Z3)
-            A3 = self.sigmoid(Z3)                    # shape (n, output_dim)
+            Z1 = X.dot(self.W1) + self.b1            # (n, hidden_dim1)
+            A1 = np.tanh(Z1)                         # (n, hidden_dim1)
+            Z2 = A1.dot(self.W2) + self.b2           # (n, hidden_dim2)
+            A2 = np.tanh(Z2)                         # (n, hidden_dim2)
+            Z3 = A2.dot(self.W3) + self.b3           # (n, output_dim)
+            A3 = self.softmax(Z3)                    # (n, output_dim)
 
             # ---- Backward Pass ----
-            # dZ3: gradient of loss w.r.t. Z3
-            dZ3 = A3 - Y                             # shape (n, output_dim)
-            # Gradients for W3, b3
-            dW3 = (A2.T.dot(dZ3)) / n                # shape (hidden_dim2, output_dim)
+            # Gradient of softmax + cross-entropy: dZ3 = A3 - Y
+            dZ3 = A3 - Y                             # (n, output_dim)
+            dW3 = (A2.T.dot(dZ3)) / n                # (hidden_dim2, output_dim)
             db3 = np.sum(dZ3, axis=0, keepdims=True) / n
 
             # Backpropagate into second hidden layer
-            dA2 = dZ3.dot(self.W3.T)                 # shape (n, hidden_dim2)
-            # derivative of tanh is (1 - tanh^2)
-            dZ2 = dA2 * (1 - A2**2)                  # shape (n, hidden_dim2)
-            dW2 = (A1.T.dot(dZ2)) / n                # shape (hidden_dim1, hidden_dim2)
+            dA2 = dZ3.dot(self.W3.T)                 # (n, hidden_dim2)
+            dZ2 = dA2 * (1 - A2**2)                  # tanh' = 1 - tanh^2
+            dW2 = (A1.T.dot(dZ2)) / n                # (hidden_dim1, hidden_dim2)
             db2 = np.sum(dZ2, axis=0, keepdims=True) / n
 
             # Backpropagate into first hidden layer
-            dA1 = dZ2.dot(self.W2.T)                 # shape (n, hidden_dim1)
-            dZ1 = dA1 * (1 - A1**2)                  # shape (n, hidden_dim1)
-            dW1 = (X.T.dot(dZ1)) / n                 # shape (input_dim, hidden_dim1)
+            dA1 = dZ2.dot(self.W2.T)                 # (n, hidden_dim1)
+            dZ1 = dA1 * (1 - A1**2)                  # (n, hidden_dim1)
+            dW1 = (X.T.dot(dZ1)) / n                 # (input_dim, hidden_dim1)
             db1 = np.sum(dZ1, axis=0, keepdims=True) / n
 
             # ---- Parameter Updates ----
@@ -120,20 +113,18 @@ class NeuralNetScratch(Classifier):
 
     def predict(self, X):
         """
-        Perform a forward pass and return predicted class indices.
+        Perform a forward pass through the trained network and return class indices.
 
         Args:
             X (ndarray): shape (n_samples, input_dim)
 
         Returns:
-            ndarray: shape (n_samples,), predicted labels 0..output_dim-1
+            ndarray: predicted labels, shape (n_samples,)
         """
-        # Forward propagation through all layers
         Z1 = X.dot(self.W1) + self.b1
         A1 = np.tanh(Z1)
         Z2 = A1.dot(self.W2) + self.b2
         A2 = np.tanh(Z2)
         Z3 = A2.dot(self.W3) + self.b3
-        A3 = self.sigmoid(Z3)
-        # Choose the class with highest activation
+        A3 = self.softmax(Z3)
         return np.argmax(A3, axis=1)
