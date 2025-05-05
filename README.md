@@ -47,10 +47,7 @@ CS-440-Final-Project/
 
 1. **Clone the repository**
 
-   ```bash
-   git clone git@github.com:jeremyjfonseca/CS-440-Final-Project.git
-   cd CS-440-Final-Project
-   ```
+``
 
 2. **Create and activate a virtual environment**
 
