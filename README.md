@@ -78,6 +78,7 @@ Run classification experiments via the command-line interface:
 python experiments/run.py \
   --algo <perceptron|scratch|pytorch> \
   --pct 50 \
+  --test_pct 20 \
   --runs 3 \
   --hid1 128 \
   --hid2 64 \
@@ -87,18 +88,19 @@ python experiments/run.py \
 
 ### Arguments
 
-* `--algo`  : Algorithm to run (`perceptron`, `scratch`, or `pytorch`).
-* `--pct`   : Percentage of data for training (integer 10–100).
-* `--runs`  : Number of random trials to average (default: 1).
-* `--hid1`  : Size of the **first** hidden layer for NN models (default: 100).
-* `--hid2`  : Size of the **second** hidden layer for NN models (default: 50).
-* `--lr`    : Learning rate for all models (default: 0.01).
-* `--epochs`: Number of training epochs for all models (default: 10).
+* `--algo`     : Algorithm to run (`perceptron`, `scratch`, or `pytorch`).
+* `--pct`      : Percentage of reserved training data used in training (integer 10–100).
+* `--test_pct` : Percentage of data reserved for testing (default: 20)
+* `--runs`     : Number of random trials to average (default: 1).
+* `--hid1`     : Size of the **first** hidden layer for NN models (default: 100).
+* `--hid2`     : Size of the **second** hidden layer for NN models (default: 50).
+* `--lr`       : Learning rate for all models (default: 0.01).
+* `--epochs`   : Number of training epochs for all models (default: 10).
 
 ### Example
 
 ```bash
-python experiments/run.py --algo scratch --pct 50 --runs 3 --hid1 128 --hid2 64 --lr 0.05 --epochs 20
+python experiments/run.py --algo scratch --pct 50 --test_pct 15 --runs 3 --hid1 128 --hid2 64 --lr 0.05 --epochs 20
 ```
 
 ## File Descriptions

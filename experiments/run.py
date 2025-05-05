@@ -34,6 +34,16 @@ def accuracy(y_true, y_pred):
     """
     Compute simple classification accuracy.
     """
+
+    #y_true = np.asarray(y_true)
+    #y_pred = np.asarray(y_pred)
+
+    if y_true.size == 0:
+        print("Warning: y_true is empty.")
+    
+    if y_pred.size == 0:
+        print("Warning: y_pred is empty.")
+
     return np.mean(y_true == y_pred)
 
 
@@ -51,7 +61,13 @@ def main():
         "--pct",
         type=int,
         required=True,
-        help="Percent of data for training (10–100)"
+        help="Percent of reserved training data used (10-100)"
+    )
+    parser.add_argument(
+        "--test_pct",
+        type=int,
+        default=20,
+        help="Percent of total data reserved for testing (5-50)"
     )
     parser.add_argument(
         "--runs",
@@ -89,10 +105,21 @@ def main():
     (_, _), (X, y) = load_data()
     n_features = X.shape[1]
     n_classes  = len(np.unique(y))
+    
+    # Print the test/train splits 
+    n = X.shape[0]
+    n_test = int(n * args.test_pct / 100)
+    n_train = int((n-n_test) * args.pct / 100)
+    print('n =', n, 
+          '| n_test =', n_test, '(' , n_test/n*100, 
+          '%) | n_train =', n_train, '(' , n_train/n*100, 
+          '%) | unused =', n-n_train-n_test, '(' , (n-n_train-n_test)/n*100, 
+          '%)')
+    del n, n_test, n_train
 
     # Run the specified number of trials
     for run in range(args.runs):
-        X_train, y_train, X_test, y_test = get_split(X, y, args.pct, seed=run)
+        X_train, y_train, X_test, y_test = get_split(X, y, pct=args.pct, test_pct=args.test_pct, seed=run)
 
         # Instantiate the chosen model
         if args.algo == "perceptron":

@@ -103,26 +103,30 @@ def load_data():
     return (X_faces, y_faces), (X_digits, y_digits)
 
 
-def get_split(X, y, pct, seed):
+def get_split(X, y, pct, test_pct, seed):
     """
-    Randomly split (X, y) into a pct% training set and the rest as test.
+    Randomly split (X, y) into a test_pct% testing set, and uses pct% of the remaining as a training set.
 
     Args:
-        X       (ndarray): feature matrix, shape (n_samples, n_features)
-        y       (ndarray): label vector, shape (n_samples,)
-        pct     (int): percentage (10–100) for training portion
-        seed    (int): RNG seed for reproducibility
+        X        (ndarray): feature matrix, shape (n_samples, n_features)
+        y        (ndarray): label vector, shape (n_samples,)
+        pct      (int): percentage (10-100) used of reserved training data
+        test_pct (int): percentage (5-100) of reserved test data
+        seed     (int): RNG seed for reproducibility
 
     Returns:
         X_train, y_train, X_test, y_test
     """
     assert 0 < pct <= 100, "pct must be in (0,100]"
+    assert 5 <= test_pct < 100, "test pct must be in [5,100)"
     np.random.seed(seed)
     n = X.shape[0]
     # shuffle indices
     idx = np.random.permutation(n)
-    n_train = int(n * pct / 100)
+    n_test = int(n * test_pct / 100)
+    n_train = int((n-n_test) * pct / 100)
+    #print('n =', n, 'n_test =', n_test, '(' , n_test/n*100, '%), n_train =', n_train, '(' , n_train/n*100, '%), unused =', n-n_train-n_test, '(' , (n-n_train-n_test)/n*100, '%)')
     train_idx = idx[:n_train]
-    test_idx  = idx[n_train:]
+    test_idx  = idx[(n-n_test):]
 
     return X[train_idx], y[train_idx], X[test_idx], y[test_idx]
