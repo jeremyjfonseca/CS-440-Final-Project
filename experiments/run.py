@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 experiments/run.py
 
@@ -5,14 +6,28 @@ Command-line interface to run classification experiments
 on Perceptron, Scratch NN, and PyTorch NN with two hidden layers.
 """
 
+import os
+import sys
+
+# ─── Add the project root to sys.path so imports work from here ─────────────────
+# e.g. if this file is at /.../CS-440-Final-Project/experiments/run.py,
+# this will insert /.../CS-440-Final-Project into sys.path.
+PROJECT_ROOT = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), os.pardir)
+)
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+# ────────────────────────────────────────────────────────────────────────────────
+
 import argparse
 import time
 import numpy as np
 
+# now these will resolve properly
 from data_loader.loader import load_data, get_split
-from perceptron.model import Perceptron
-from nn_scratch.nn import NeuralNetScratch
-from nn_pytorch.model import PyTorchNN
+from perceptron.model    import Perceptron
+from nn_scratch.nn       import NeuralNetScratch
+from nn_pytorch.model    import PyTorchNN
 
 
 def accuracy(y_true, y_pred):
@@ -70,14 +85,13 @@ def main():
     )
     args = parser.parse_args()
 
-    # Load datasets; here we're using the digit set as default
+    # Load datasets; here we're defaulting to digits
     (_, _), (X, y) = load_data()
     n_features = X.shape[1]
-    n_classes = len(np.unique(y))
+    n_classes  = len(np.unique(y))
 
     # Run the specified number of trials
     for run in range(args.runs):
-        # Create a pct% train split, rest is test
         X_train, y_train, X_test, y_test = get_split(X, y, args.pct, seed=run)
 
         # Instantiate the chosen model
@@ -85,24 +99,22 @@ def main():
             model = Perceptron(lr=args.lr, epochs=args.epochs)
         elif args.algo == "scratch":
             model = NeuralNetScratch(
-                input_dim=n_features,
-                hidden_dim1=args.hid1,
-                hidden_dim2=args.hid2,
-                output_dim=n_classes,
-                lr=args.lr,
-                epochs=args.epochs
+                input_dim   = n_features,
+                hidden_dim1 = args.hid1,
+                hidden_dim2 = args.hid2,
+                output_dim  = n_classes,
+                lr          = args.lr,
+                epochs      = args.epochs
             )
-        elif args.algo == "pytorch":
+        else:  # pytorch
             model = PyTorchNN(
-                input_dim=n_features,
-                hidden_dim1=args.hid1,
-                hidden_dim2=args.hid2,
-                output_dim=n_classes,
-                lr=args.lr,
-                epochs=args.epochs
+                input_dim   = n_features,
+                hidden_dim1 = args.hid1,
+                hidden_dim2 = args.hid2,
+                output_dim  = n_classes,
+                lr          = args.lr,
+                epochs      = args.epochs
             )
-        else:
-            raise ValueError(f"Unknown algorithm: {args.algo}")
 
         # Train and measure time
         start_time = time.time()
@@ -111,7 +123,7 @@ def main():
 
         # Evaluate accuracy
         preds = model.predict(X_test)
-        acc = accuracy(y_test, preds)
+        acc   = accuracy(y_test, preds)
 
         # Print a concise summary
         print(f"{args.algo} | pct={args.pct} | run={run} "
