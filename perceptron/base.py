@@ -1,16 +1,21 @@
+"""
+perceptron/base.py
+
+Defines an abstract Classifier interface that all models must follow.
+This ensures a consistent fit()/predict() API across implementations.
+"""
+
 class Classifier:
-    """
-    Abstract base class for all classifiers in this project.
-    Subclasses must implement fit() and predict().
-    """
     def fit(self, X, y):
         """
         Train the model on features X and labels y.
+        Must be overridden by subclasses.
         """
-        raise NotImplementedError
+        raise NotImplementedError("fit() must be implemented by subclass")
 
     def predict(self, X):
         """
-        Given features X, return predicted labels.
+        Predict labels for the given feature matrix X.
+        Must be overridden by subclasses.
         """
-        raise NotImplementedError
+        raise NotImplementedError("predict() must be implemented by subclass")
