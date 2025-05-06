@@ -22,6 +22,7 @@ if PROJECT_ROOT not in sys.path:
 import argparse
 import time
 import numpy as np
+import pickle
 
 # now these will resolve properly
 from data_loader.loader import load_data, get_split
@@ -34,10 +35,6 @@ def accuracy(y_true, y_pred):
     """
     Compute simple classification accuracy.
     """
-
-    #y_true = np.asarray(y_true)
-    #y_pred = np.asarray(y_pred)
-
     if y_true.size == 0:
         print("Warning: y_true is empty.")
     
@@ -56,6 +53,12 @@ def main():
         choices=["perceptron", "scratch", "pytorch"],
         required=True,
         help="Which algorithm to run"
+    )
+    parser.add_argument(
+        "--dataset",
+        choices=["digits", "faces"],
+        default="digits",
+        help="Dataset to use (digits or faces)"
     )
     parser.add_argument(
         "--pct",
@@ -99,12 +102,27 @@ def main():
         default=10,
         help="Number of epochs for all models"
     )
+    parser.add_argument(
+        "--save_model",
+        action="store_true",
+        help="Save the trained model from the last run"
+    )
     args = parser.parse_args()
 
-    # Load datasets; here we're defaulting to digits
-    (_, _), (X, y) = load_data()
+    # Load the selected dataset
+    print(f"Loading {args.dataset} dataset...")
+    if args.dataset == "digits":
+        (_, _), (X, y) = load_data()
+    else:  # faces
+        (X, y), (_, _) = load_data()
+    
     n_features = X.shape[1]
     n_classes  = len(np.unique(y))
+    
+    # Print dataset information
+    print(f"Dataset: {args.dataset}")
+    print(f"Features: {n_features}, Classes: {n_classes}")
+    print(f"Total samples: {X.shape[0]}")
     
     # Print the test/train splits 
     n = X.shape[0]
@@ -116,6 +134,11 @@ def main():
           '%) | unused =', n-n_train-n_test, '(' , (n-n_train-n_test)/n*100, 
           '%)')
     del n, n_test, n_train
+
+    # Store results for all runs
+    times = []
+    accs = []
+    last_model = None
 
     # Run the specified number of trials
     for run in range(args.runs):
@@ -147,15 +170,40 @@ def main():
         start_time = time.time()
         model.fit(X_train, y_train)
         elapsed = time.time() - start_time
+        times.append(elapsed)
 
         # Evaluate accuracy
         preds = model.predict(X_test)
-        acc   = accuracy(y_test, preds)
+        acc = accuracy(y_test, preds)
+        accs.append(acc)
 
         # Print a concise summary
-        print(f"{args.algo} | pct={args.pct} | run={run} "
+        print(f"Run {run+1}/{args.runs} | {args.algo} | pct={args.pct} "
               f"| time={elapsed:.3f}s | acc={acc:.3f}")
+        
+        # Save the last model if requested
+        if run == args.runs - 1 and args.save_model:
+            last_model = model
 
+    # Print overall statistics
+    mean_time = np.mean(times)
+    std_time = np.std(times)
+    mean_acc = np.mean(accs)
+    std_acc = np.std(accs)
+    
+    print("\nOverall Statistics:")
+    print(f"Algorithm: {args.algo}, Dataset: {args.dataset}, Training Data: {args.pct}%")
+    print(f"Accuracy: {mean_acc:.4f} ± {std_acc:.4f}")
+    print(f"Training Time: {mean_time:.3f}s ± {std_time:.3f}s")
+    
+    # Save the model if requested
+    if args.save_model and last_model is not None:
+        models_dir = os.path.join(PROJECT_ROOT, 'saved_models')
+        os.makedirs(models_dir, exist_ok=True)
+        
+        model_path = os.path.join(models_dir, f"{args.dataset}_{args.algo}.pkl")
+        with open(model_path, 'wb') as f:
+            pickle.dump(last_model, f)
 
 if __name__ == "__main__":
     main()
