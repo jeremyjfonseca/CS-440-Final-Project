@@ -24,7 +24,7 @@ def accuracy(y_true, y_pred):
     return np.mean(y_true == y_pred)
 
 def run_experiment(algo_name, X, y, pct, test_pct, runs, hidden_dim1=100, hidden_dim2=50, 
-                  lr=0.01, epochs=10, batch_size=32, face_dataset=False, save_model=False):
+                  lr=0.1, epochs=100, batch_size=32, face_dataset=False, save_model=False):
     n_features = X.shape[1]
     n_classes = len(np.unique(y))
     
@@ -122,8 +122,8 @@ def main():
     # Configure model hyperparameters
     hidden_dim1 = 100
     hidden_dim2 = 50
-    lr = 0.01
-    epochs = 10
+    lr = 0.15
+    epochs = 200
     batch_size = 32
     
     # Load datasets
